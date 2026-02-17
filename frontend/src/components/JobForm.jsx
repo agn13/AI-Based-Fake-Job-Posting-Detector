@@ -2,12 +2,6 @@ import { useState } from "react";
 import { analyzeJob } from "../services/api";
 import ResultCard from "./ResultCard";
 
-const FORM_FIELDS = [
-  { name: "jobTitle", label: "Job Title", type: "text" },
-  { name: "companyEmail", label: "Company Email", type: "email" },
-  { name: "salary", label: "Salary", type: "text" },
-];
-
 const initialFormState = {
   jobTitle: "",
   companyEmail: "",
@@ -15,95 +9,65 @@ const initialFormState = {
   description: "",
 };
 
-export default function JobForm() {
+export default function JobForm({ history, setHistory }) {
   const [formData, setFormData] = useState(initialFormState);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const validateForm = () => {
-    const { jobTitle, companyEmail, salary, description } = formData;
-
-    if (!jobTitle.trim()) return "Job Title is required";
-    if (!companyEmail.trim()) return "Company Email is required";
-    if (!salary.trim()) return "Salary is required";
-    if (!description.trim()) return "Job Description is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyEmail))
-      return "Invalid email format";
-
-    return null;
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null);
-  };
-
-  const resetForm = () => {
-    setFormData(initialFormState);
-    setError(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
     setLoading(true);
-    setError(null);
     setResult(null);
 
-    try {
-      const response = await analyzeJob(formData);
-      setResult(response);
-      resetForm();  // now safe
-    } catch (err) {
-      setError(
-        err.message || "Failed to analyze job posting. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
+    const response = await analyzeJob(formData);
+
+    setResult(response);
+    setHistory([...history, { ...formData, ...response }]);
+    setFormData(initialFormState);
+    setLoading(false);
   };
 
   return (
     <>
       <form onSubmit={handleSubmit}>
-        {error && <div className="error-message">{error}</div>}
+        <input
+          name="jobTitle"
+          placeholder="Job Title"
+          value={formData.jobTitle}
+          onChange={handleInputChange}
+          required
+        />
 
-        {FORM_FIELDS.map((field) => (
-          <div key={field.name}>
-            <label htmlFor={field.name}>{field.label}</label>
-            <input
-              id={field.name}
-              type={field.type}
-              name={field.name}
-              value={formData[field.name]}
-              onChange={handleInputChange}
-              disabled={loading}
-              required
-            />
-          </div>
-        ))}
+        <input
+          name="companyEmail"
+          placeholder="Company Email"
+          value={formData.companyEmail}
+          onChange={handleInputChange}
+          required
+        />
 
-        <div>
-          <label htmlFor="description">Job Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            disabled={loading}
-            required
-          />
-        </div>
+        <input
+          name="salary"
+          placeholder="Salary"
+          value={formData.salary}
+          onChange={handleInputChange}
+          required
+        />
 
-        <button type="submit" disabled={loading}>
+        <textarea
+          name="description"
+          placeholder="Job Description"
+          value={formData.description}
+          onChange={handleInputChange}
+          required
+        />
+
+        <button type="submit">
           {loading ? "Analyzing..." : "Analyze"}
         </button>
       </form>

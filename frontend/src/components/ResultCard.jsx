@@ -1,44 +1,48 @@
-import { useEffect, useState } from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 
 export default function ResultCard({ result }) {
-  const [animatedScore, setAnimatedScore] = useState(0);
+  const COLORS = ["#16a34a", "#f59e0b", "#dc2626"];
 
-  useEffect(() => {
-    if (!result) return;
+  const data = [
+    { name: "Safe", value: 100 - result.fraudScore },
+    { name: "Risk", value: result.fraudScore }
+  ];
 
-    let start = 0;
-    const end = result.fraudScore;
-    const duration = 800;
-    const increment = end / (duration / 20);
-
-    const counter = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        start = end;
-        clearInterval(counter);
-      }
-      setAnimatedScore(Math.floor(start));
-    }, 20);
-
-    return () => clearInterval(counter);
-  }, [result]);
-
-  if (!result) return null;
-
-  const getColor = () => {
-    if (result.riskLevel === "LOW") return "#16a34a";     // green
-    if (result.riskLevel === "MEDIUM") return "#f59e0b"; // orange
-    if (result.riskLevel === "HIGH") return "#dc2626";   // red
-    return "#000";
+  const getRiskColor = () => {
+    if (result.riskLevel === "LOW") return "#16a34a";
+    if (result.riskLevel === "MEDIUM") return "#f59e0b";
+    if (result.riskLevel === "HIGH") return "#dc2626";
   };
 
   return (
     <div className="result-card">
-      <h3>Fraud Score: {animatedScore}%</h3>
-
-      <h4 style={{ color: getColor() }}>
+      <h3 style={{ color: getRiskColor() }}>
         Risk Level: {result.riskLevel}
-      </h4>
+      </h3>
+
+      <div className="chart-container">
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              outerRadius={90}
+              label
+            >
+              {data.map((entry, index) => (
+                <Cell key={index} fill={COLORS[index]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
       <ul>
         {result.reasons.map((reason, index) => (
