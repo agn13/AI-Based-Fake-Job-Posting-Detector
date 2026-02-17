@@ -1,46 +1,116 @@
 import { useState } from "react";
+import { analyzeJob } from "../services/api";
+import ResultCard from "./ResultCard";
+
+const FORM_FIELDS = [
+  { name: "jobTitle", label: "Job Title", type: "text" },
+  { name: "companyEmail", label: "Company Email", type: "email" },
+  { name: "salary", label: "Salary", type: "text" },
+];
+
+const initialFormState = {
+  jobTitle: "",
+  companyEmail: "",
+  salary: "",
+  description: "",
+};
 
 export default function JobForm() {
-  const [jobTitle, setJobTitle] = useState("");
-  const [companyEmail, setCompanyEmail] = useState("");
-  const [salary, setSalary] = useState("");
-  const [description, setDescription] = useState("");
+  const [formData, setFormData] = useState(initialFormState);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    const { jobTitle, companyEmail, salary, description } = formData;
+
+    if (!jobTitle.trim()) return "Job Title is required";
+    if (!companyEmail.trim()) return "Company Email is required";
+    if (!salary.trim()) return "Salary is required";
+    if (!description.trim()) return "Job Description is required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyEmail))
+      return "Invalid email format";
+
+    return null;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(null);
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setError(null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ jobTitle, companyEmail, salary, description });
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await analyzeJob(formData);
+      setResult(response);
+      resetForm();  // now safe
+    } catch (err) {
+      setError(
+        err.message || "Failed to analyze job posting. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Job Title"
-        value={jobTitle}
-        onChange={(e) => setJobTitle(e.target.value)}
-      />
+    <>
+      <form onSubmit={handleSubmit}>
+        {error && <div className="error-message">{error}</div>}
 
-      <input
-        type="email"
-        placeholder="Company Email"
-        value={companyEmail}
-        onChange={(e) => setCompanyEmail(e.target.value)}
-      />
+        {FORM_FIELDS.map((field) => (
+          <div key={field.name}>
+            <label htmlFor={field.name}>{field.label}</label>
+            <input
+              id={field.name}
+              type={field.type}
+              name={field.name}
+              value={formData[field.name]}
+              onChange={handleInputChange}
+              disabled={loading}
+              required
+            />
+          </div>
+        ))}
 
-      <input
-        type="text"
-        placeholder="Salary"
-        value={salary}
-        onChange={(e) => setSalary(e.target.value)}
-      />
+        <div>
+          <label htmlFor="description">Job Description</label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            disabled={loading}
+            required
+          />
+        </div>
 
-      <textarea
-        placeholder="Job Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+        <button type="submit" disabled={loading}>
+          {loading ? "Analyzing..." : "Analyze"}
+        </button>
+      </form>
 
-      <button type="submit">Analyze</button>
-    </form>
+      {loading && <div className="spinner"></div>}
+
+      {result && <ResultCard result={result} />}
+    </>
   );
 }
