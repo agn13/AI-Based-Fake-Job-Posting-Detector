@@ -1,0 +1,11 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/fakejobdetector
+
+server:
+  port: 8080
+
+ml:
+  service:
+    url: http://localhost:8000
