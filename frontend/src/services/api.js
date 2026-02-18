@@ -1,16 +1,25 @@
 export const analyzeJob = async (data) => {
-  console.log("Sending data:", data);
+  console.log("Sending to backend:", data);
 
-  // Simulated delay (fake API call)
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  const response = await fetch(
+    "http://localhost:8080/api/jobs/analyze",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    }
+  );
 
-  return {
-    fraudScore: 78,
-    riskLevel: "HIGH",
-    reasons: [
-      "Public email domain detected",
-      "Unrealistic salary offered",
-      "Payment request keyword found"
-    ]
-  };
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Backend error:", errorText);
+    throw new Error("Failed to analyze job");
+  }
+
+  const result = await response.json();
+  console.log("Backend response:", result);
+
+  return result;
 };
