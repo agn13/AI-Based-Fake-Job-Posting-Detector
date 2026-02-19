@@ -283,9 +283,9 @@ Rate limiting
 
 👨‍💻 Contributors
 
-Frontend + ML: Your Name
+Frontend + ML: Agniroop Saha (@agn13)
 
-Backend + Database: Friend Name
+Backend + Database: Adityabarno Basu (@adityabarno)
 
 🏁 Final Notes
 
